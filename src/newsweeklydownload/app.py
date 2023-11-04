@@ -130,12 +130,23 @@ class NewsweeklyDownload(QtWidgets.QMainWindow, Ui_MainWindow):
     def installff(self):
         import shutil, os
         if not os.path.exists("C:\\ffmpeg\\bin\\ffmpeg.exe"):
-            shutil.copytree("./ffmpeg/", "C:/ffmpeg")
+            src = r"./app/newsweeklydownload/ffmpeg/bin"
+            dst = r"C:/ffmpeg"
+            # 如果文件不存在，则删除C:\ffmpeg并重新创建
+            try:
+                shutil.rmtree(dst)
+                os.makedirs("C:/ffmpeg")
+            except:
+                pass
+            # 复制ffmpeg.exe到C:\ffmpeg\bin\内
+            shutil.copytree(src, dst)
             ffmpeg_path = 'C:\\ffmpeg\\bin'
+            # 拼接环境变量路径
             os.environ["PATH"] = ffmpeg_path + ";" + os.environ["PATH"]
             self.OutputInfo("ffmpeg配置成功", 3000)
         else:
             self.OutputInfo("文件已存在",3000)
+            
 
 
     def author(self):
