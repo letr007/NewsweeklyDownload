@@ -55,8 +55,9 @@ class DowmloadThread(QThread):
 
 class ConcatThread(QThread):
 
-    def __init__(self):
+    def __init__(self, nw_name):
         super().__init__()
+        self.name = nw_name
         
 
     def run(self):
@@ -64,17 +65,21 @@ class ConcatThread(QThread):
         while Run:
             import os, shutil, re
             path = "C:\\"
+            # 获取文件列表
             files = os.listdir("%s/xwzk_tmp" % path)
             files.sort()
+            # 生成合并列表文件
             with open("%s/xwzk_tmp/video.txt" %path, "w+") as f:
                 for i in files:
                     if re.match(r"\d+.mp4", i):
                         tmp = "file '" + i + "'\n"
                         f.write(tmp)
+            # 合并
             os.system("cd C:\\xwzk_tmp && ffmpeg -f concat -i video.txt -c copy concat.mp4")
             if not os.path.exists("C:/Video"):
                 os.makedirs("C:/Video")
-            shutil.move("C:/xwzk_tmp/concat.mp4", "C:/Video/新闻周刊.mp4")
+            
+            shutil.move("C:/xwzk_tmp/concat.mp4", "C:/Video/%s.mp4" % self.name)
             shutil.rmtree("C:/xwzk_tmp")
             Run = False
 
@@ -190,12 +195,12 @@ class NewsweeklyDownload(QtWidgets.QMainWindow, Ui_MainWindow):
         try:
             self.OutputInfo("获取链接...", 1000)
             num = self.spinBox.text()
-        
             info = self.NwDl.getHttpVideoInfo(self.dict[int(num)][1])
             urls = self.NwDl.getDownloadUrls(info)
             self.OutputInfo("下载视频...", 1000)
-        
+            # 创建线程，下载视频文件
             self.work = DowmloadThread(urls)
+            # 连接信号(download_index)和槽函数(self.dl)，传递了下载序号
             self.work.download_index.connect(self.dl)
             self.work.start()
             self.work.finished.connect(self.concat)            
@@ -206,7 +211,9 @@ class NewsweeklyDownload(QtWidgets.QMainWindow, Ui_MainWindow):
         '''拼接'''
         self.OutputInfo("下载完成",1000)
         self.OutputInfo("合并视频...",600000)
-        self.work_2 = ConcatThread()
+        num = self.spinBox.text()
+        self.nw_name = self.dict[int(num)][0]
+        self.work_2 = ConcatThread(self.nw_name)
         self.work_2.start()
         self.work_2.finished.connect(self.finished)
 
